@@ -1,0 +1,17 @@
+# General ignores
+.DS_Store
+*.log
+.vscode/
+
+# Backend ignores
+food-nutrition-backend/venv/
+food-nutrition-backend/__pycache__/
+food-nutrition-backend/*.pyc
+food-nutrition-backend/.env
+
+# Frontend ignores
+food-nutrition-frontend/node_modules/
+food-nutrition-frontend/dist/
+food-nutrition-frontend/.env.local
+food-nutrition-frontend/.env
+food-nutrition-frontend/.gitignore
