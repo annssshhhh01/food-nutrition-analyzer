@@ -40,10 +40,10 @@ with open('data/class_names.json') as f:
     class_names = json.load(f)
 
 model = models.efficientnet_b0(weights=None)
-num_ftrs = model.classifier[1].in_features
-model.classifier[1] = torch.nn.Linear(num_ftrs, len(class_names))
-model.load_state_dict(torch.load('models/food_model.pth', map_location=torch.device('cpu')))
-model.eval()
+num_ftrs = model.classifier[1].in_features   #load the festures like round etc
+model.classifier[1] = torch.nn.Linear(num_ftrs, len(class_names))  #changing the output layer so it predict only food
+model.load_state_dict(torch.load('models/food_model.pth', map_location=torch.device('cpu'))) #loading all the knowlegde our model learns
+model.eval() #start predicting and note that it stop the further training and shift to prediciton only
 
 preprocess = transforms.Compose([
     transforms.Resize(256),
@@ -66,7 +66,7 @@ def get_nutrition_data_from_api(food_name):
     try:
         response = requests.post(url, json=payload)
         response.raise_for_status()
-        data = response.json()
+        data = response.json() #convert python into dict
 
         try:
             parsed_data = data['ingredients'][0]['parsed'][0]
@@ -89,20 +89,7 @@ def get_nutrition_data_from_api(food_name):
             return None
 
         formatted_data = {
-            "nutritionPer100g": {
-                "calories": calories, "protein": get_nutrient('PROCNT'),
-                "fat": get_nutrient('FAT'), "carbs": get_nutrient('CHOCDF'),
-                "fiber": get_nutrient('FIBTG'), "sugar": get_nutrient('SUGAR'),
-                "sodium": get_nutrient('NA'), "cholesterol": get_nutrient('CHOLE'),
-                "calcium": get_nutrient('CA'), "iron": get_nutrient('FE'),
-                "magnesium": get_nutrient('MG'), "potassium": get_nutrient('K'),
-                "zinc": get_nutrient('ZN'), "phosphorus": get_nutrient('P'),
-                "vitaminA": get_nutrient('VITA_RAE'), "vitaminC": get_nutrient('VITC'),
-                "thiaminB1": get_nutrient('THIA'), "riboflavinB2": get_nutrient('RIBF'),
-                "niacinB3": get_nutrient('NIA'), "vitaminB6": get_nutrient('VITB6A'),
-                "vitaminB12": get_nutrient('VITB12'), "vitaminD": get_nutrient('VITD'),
-                "vitaminE": get_nutrient('TOCPHA'), "vitaminK": get_nutrient('VITK1'),
-            },
+            "nutritionPer100g": {"calories": calories, "protein": get_nutrient('PROCNT'),"fat": get_nutrient('FAT'), "carbs": get_nutrient('CHOCDF'),"fiber": get_nutrient('FIBTG'), "sugar": get_nutrient('SUGAR'),"sodium": get_nutrient('NA'), "cholesterol": get_nutrient('CHOLE'),"calcium": get_nutrient('CA'), "iron": get_nutrient('FE'),"magnesium": get_nutrient('MG'), "potassium": get_nutrient('K'),"zinc": get_nutrient('ZN'), "phosphorus": get_nutrient('P'),"vitaminA": get_nutrient('VITA_RAE'), "vitaminC": get_nutrient('VITC'),"thiaminB1": get_nutrient('THIA'), "riboflavinB2": get_nutrient('RIBF'),"niacinB3": get_nutrient('NIA'), "vitaminB6": get_nutrient('VITB6A'),"vitaminB12": get_nutrient('VITB12'), "vitaminD": get_nutrient('VITD'),"vitaminE": get_nutrient('TOCPHA'), "vitaminK": get_nutrient('VITK1'),},
             "allergens": []
         }
         return formatted_data
@@ -115,8 +102,8 @@ def get_nutrition_data_from_api(food_name):
 def predict_image(image_file):
     img = Image.open(image_file.stream).convert('RGB')
     img_t = preprocess(img)
-    batch_t = torch.unsqueeze(img_t, 0)
-    with torch.no_grad():
+    batch_t = torch.unsqueeze(img_t, 0) # add a dimension at position zero which tells the batch size
+    with torch.no_grad(): #it tells the model that we are not training it and thus we dont need grad
         out = model(batch_t)
     probabilities = torch.nn.functional.softmax(out[0], dim=0)
     top3_prob, top3_catid = torch.topk(probabilities, 3)
@@ -136,10 +123,10 @@ def analyze():
     if 'image' not in request.files:
         return jsonify({"error": "No image file provided"}), 400
 
-    file = request.files['image']
+    file = request.files['image'] # it looks like this request.files = {"image": <FileStorage: pizza.jpg>,"resume": <FileStorage: resume.pdf>}
 
     try:
-        predictions = predict_image(file)
+        predictions = predict_image(file) #predictions = [{"label": "Pizza", "confidence": 0.72},xyz]
         top_prediction_label = predictions[0]['label']
         nutrition_data = None
 
